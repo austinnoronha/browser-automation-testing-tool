@@ -15,12 +15,17 @@ GET | /geturl | browser
 
 ### APP Settings
 
+### Firefox Path
 <code>
-Firefox Path - const APP_CHROME_PATH = 'C:\.....chrome.exe';
+const APP_CHROME_PATH = 'C:\.....chrome.exe';
 </code>
+
+### Chrome Path
 <code>
-Chrome Path - const APP_FIREFOX_PATH = 'C:\......\firefox.exe';
+const APP_FIREFOX_PATH = 'C:\......\firefox.exe';
 </code>
+
+### Browser Instance Data Directory
 <code>
-Browser Instance Data Directory - const APP_BROWSER_USER_DIR = 'C:\Users\\Downloads\BrowserInstanceTestingData';
+const APP_BROWSER_USER_DIR = 'C:\Users\\Downloads\BrowserInstanceTestingData';
 </code>
