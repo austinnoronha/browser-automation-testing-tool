@@ -1,26 +1,108 @@
 /* @name: Server - API for Broswer Automation
  * @desc: Server Automation Tool
  * @date: 12/02/2021
+ * @issues: 
+ * 1. Code works for windows chrome browser, but need to debug why its not working for firefox
+ * 2. Firefox browser its not able to kill the instance
  */
 var express = require("express");
 const url = require('url');    
 var app = express();
+var cp = require('child_process');
+
 const APP_PORT = 3000;
 const OS_TYPE = require('os').type();
-var { exec } = require('child_process');
+const OS_PLATFORM = require('os').platform();
+const REMOTE_DEBUGGING_PORT = 9523;
+const APP_CHROME_PATH = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+const APP_FIREFOX_PATH = 'C:\\Program Files\\Mozilla Firefox\\firefox.exe';
+const APP_BROWSER_USER_DIR = 'C:\\Users\\intel\\Downloads\\Simlutedata';
+let APP_BROWSER_INSTANCE_COUNT = 1;
 
 var browserInstances = [];
 var lastInstance = '';
+
+function appDebug(msg, err){
+    var tmp = `[APP] ${Date().toString()}: ` + msg;
+    if(err && err === 1){
+        console.error(tmp);
+    }else{
+        console.log(tmp);
+    }
+}
+
 function throwError(res, api, error){
     res.status(500).send(`[API: ${api}] - ${error}`);
 }
+
 function displayHTML(res, body){
     res.type('html');             
     res.send(body);
 }
 
+function startNewBrowserInstance(browser,url,id,callback){
+	try{
+        appDebug(`Terminal browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, start: triggered`);
+
+        var terminal = cp.spawn( (OS_PLATFORM === 'win32' ? 'cmd':'bash') );
+        var browserInstance = {};
+        var browserPath = browser === 'chrome' ? APP_CHROME_PATH : APP_FIREFOX_PATH;
+
+        terminal.on('exit', function (code) {
+            appDebug(`Starting browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, code: ${code}`);
+
+            browserInstance = cp.spawn(browserPath,[
+                '--remote-debugging-port='+REMOTE_DEBUGGING_PORT,
+                '--user-data-dir='+APP_BROWSER_USER_DIR+'\\userdata_'+browser,
+                url
+            ]);
+
+            callback(null,browser,url,id,browserInstance);
+        });
+
+        setTimeout(function() {
+            appDebug(`Terminal browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, create_new_dir: userdata_${browser}`);
+            terminal.stdin.write('rmdir /s '+APP_BROWSER_USER_DIR+'\\userdata_'+browser+'\n');
+            terminal.stdin.write('mkdir '+APP_BROWSER_USER_DIR+'\\userdata_'+browser+'\n');
+            terminal.stdin.end();
+            appDebug(`Terminal browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, end: triggered`);
+        }, 1000);
+    }
+    catch(e){
+        console.log(e);
+    }	
+}
+
+function cleanupBrowserInstance(browser,callback){
+	try{
+        appDebug(`Terminal clean browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, start: triggered`);
+
+        var terminal = cp.spawn( (OS_PLATFORM === 'win32' ? 'cmd':'bash') );
+        
+        terminal.on('exit', function (code) {
+            callback(null);
+        });
+
+        setTimeout(function() {
+            appDebug(`Terminal clean browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, create_new_dir: userdata_${browser}`);
+            terminal.stdin.write('rmdir /Q /S '+APP_BROWSER_USER_DIR+'\\userdata_'+browser+'\n');
+            //terminal.stdin.write('mkdir '+APP_BROWSER_USER_DIR+'\\userdata_'+browser+'\n');
+            terminal.stdin.end();
+            appDebug(`Terminal clean browser: ${browser}, OS_PLATFORM: ${OS_PLATFORM}, end: triggered`);
+        }, 1000);
+    }
+    catch(e){
+        console.log(e);
+    }	
+}
+
 app.get('/', function (req, res) {
-    res.send('Sorry your have reached the wrong place!')
+    var tmp = "Method  |  Endpoint  |  Parameter(s)"+"<br>";
+    tmp += "GET  |  /start  |  browser, url"+"<br>";
+    tmp += "GET  |  /stop  |  browser"+"<br>";
+    tmp += "GET  |  /cleanup  |  browser"+"<br>";
+    tmp += "GET  |  /geturl  |  browser"+"<br>";
+    res.send('Sorry your have reached the wrong place!<br>APIs<br>'+tmp);
 });
 
 app.get('/start', function (req, res) {
@@ -31,8 +113,8 @@ app.get('/start', function (req, res) {
     
     try {
         const myURL = new URL(url);
-    } catch (error) {
-        console.log(`[APP] ${Date().toString()}: ${error.input} is not a valid url`);
+    } catch (e) {
+        appDebug(`[API: /start] Exception ${e.input}`);
         isValidURL = false;
     }
 
@@ -44,51 +126,26 @@ app.get('/start', function (req, res) {
         throwError(res, 'start', 'url is invalid, please send valid url');
         return;
     }
-
-    var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
-    var cmd = start + ' ' + browser + ' ' + url;
     
     try{
-        var child = exec(cmd, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                return;
-            }
-            
-            displayHTML(res, `Successfully loaded ${browser} and url ${url} witdh pid: ${pid}`);
-        });
+        const callBack = function(err,browser,url,id,browserInstance){
+            browserInstances.push({
+                browser: browser,
+                url: url,
+                id: id,
+                pid: browserInstance.pid,
+                child: browserInstance
+            });
+            lastInstance = url;
 
-        child.on('close', (code, signal) => {
-            console.error(`[APP] ${Date().toString()}: child process closed code: ${code}`);
-        });
-        child.on('disconnect', (code, signal) => {
-            console.error(`[APP] ${Date().toString()}: child process disconnected code: ${code}`);
-        });
-        child.on('exit', (code, signal) => {
-            console.error(`[APP] ${Date().toString()}: child process exited code: ${code}`);
-        });
-        child.on('SIGHUP', () => {
-            console.log(`[APP] ${Date().toString()}: child process Got SIGHUP signal`);
-        });
+            displayHTML(res, `Successfully loaded (${id}) ${browser} - url ${url} & pid: ${browserInstance.pid}`);
+        }
 
-        var { pid } = child;
-
-        console.log(`[APP] ${Date().toString()}: loaded child ${pid}`);
-
-        if(typeof browserInstances[browser] === "undefined")
-            browserInstances[browser] = [];
-
-        if(typeof browserInstances[browser][pid] === "undefined")
-            browserInstances[browser][pid] = {};
-
-        browserInstances[browser][pid] = {
-            url: url,
-            child: child
-        };
-        lastInstance = url;
+        startNewBrowserInstance(browser, url, APP_BROWSER_INSTANCE_COUNT++, callBack);
     }
     catch(e){
-        //throwError(res, 'start', 'some error occurred');
+        appDebug(`[API: /start] Exception ${e.getMessage()}`);
+        throwError(res, 'start', 'some error occurred');
     }
     
 });
@@ -116,22 +173,38 @@ app.get('/stop', function (req, res) {
     let isValidBrowser = (browser === 'chrome' || browser === 'firefox') ? true:false;
 
     if(!isValidBrowser){
-        throwError(res, 'geturl', 'browser should be chrome or firefox');
+        throwError(res, 'stop', 'browser should be chrome or firefox');
         return;
     }
 
-    var instances = browserInstances[browser] || null;
-    var countInstances = instances != null ? instances.length : 0;
-    if(countInstances > 0){
-        console.log("countInstances",countInstances)
-        
-        for(var i in instances){
-            var {url, child} = instances[i];
-            child.kill(0);
-        }
-    }
+    var instances = browserInstances.filter(function(item) {
+        return item.browser === browser;
+    });
 
-    displayHTML(res, `Successfully stopped ${browser}`);
+    var countInstances = instances != null ? instances.length : 0;
+    appDebug(`[API: /stop] Shutting down (${countInstances}) of ${browser} browser`);
+
+    if(countInstances > 0){
+        instances.map((item, idx, orgArr) => {
+            var {browser, url, id, child, pid} = item;
+            try{
+                appDebug(`[API: /stop] Shutdown down (${id}) ${browser} - url ${url} & pid: ${child.pid}`);
+                child.kill();
+                APP_BROWSER_INSTANCE_COUNT--;
+
+                let removeIndex = browserInstances.map((item) => item.pid).indexOf(pid);
+                browserInstances.splice(removeIndex, 1);
+            }
+            catch(e){
+                appDebug(`[API: /stop] Exception ${e.toString()}`);
+            }
+        });
+
+        displayHTML(res, `Successfully stopped ${browser} total browserInstances: ${browserInstances.length}`);
+    }
+    else{
+        displayHTML(res, `Browser "${browser}" has no instances running...`);
+    }
 });
 
 
@@ -142,27 +215,33 @@ app.get('/cleanup', function (req, res) {
     let isValidBrowser = (browser === 'chrome' || browser === 'firefox') ? true:false;
 
     if(!isValidBrowser){
-        throwError(res, 'geturl', 'browser should be chrome or firefox');
+        throwError(res, 'cleanup', 'browser should be chrome or firefox');
         return;
     }
 
-    var instances = browserInstances[browser] || null;
+    var instances = browserInstances.filter(function(item) {
+        return item.browser === browser;
+    });
+
     var countInstances = instances != null ? instances.length : 0;
-    if(countInstances > 0){
-        console.log("countInstances",countInstances)
-    }
+    appDebug(`[API: /cleanup] Shutting down (${countInstances}) of ${browser} browser`);
 
-    exec(`taskkill /im ${browser} /t`, (err, stdout, stderr) => {
-        if (err) {
-          throw err
+    if(countInstances === 0){
+        try{
+            cleanupBrowserInstance(browser, function callback(){
+                displayHTML(res, `Successfully cleaned "${browser}" userdata`);
+            });
         }
-    
-        console.log('stdout', stdout)
-        console.log('stderr', err)
-      });
-
-      displayHTML(res, `Successfully cleaned ${browser}`);
+        catch(e){
+            appDebug(`[API: /cleanup] Exception ${e.toString()}`);
+        }
+        
+    }
+    else{
+        displayHTML(res, `Browser "${browser}" has ${countInstances} instances running, please stop them and then run cleanup...`);
+    }
 });
+
 
 
 app.listen(APP_PORT, () => {
