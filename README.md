@@ -1,7 +1,7 @@
-## Browser AUtomation Tool
+## Browser Automation Tool
 
 This NodeJS APP will trigger "X" no.of instances of a browser
-
+Works only with Chrom/Firefox on windows platform.
 
 ### End Point APIs
 
@@ -14,6 +14,7 @@ GET | /geturl | browser
 
 
 ### APP Settings
-const APP_CHROME_PATH = 'C:\.....chrome.exe';
-const APP_FIREFOX_PATH = 'C:\......\firefox.exe';
-const APP_BROWSER_USER_DIR = 'C:\Users\\Downloads\BrowserInstanceTestingData';
+
+Firefox Path | const APP_CHROME_PATH = 'C:\.....chrome.exe';
+Chrome Path | const APP_FIREFOX_PATH = 'C:\......\firefox.exe';
+Browser Instance Data Directory | const APP_BROWSER_USER_DIR = 'C:\Users\\Downloads\BrowserInstanceTestingData';
