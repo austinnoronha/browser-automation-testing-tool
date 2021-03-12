@@ -10,7 +10,7 @@ const OS_TYPE = require('os').type();
 var { exec } = require('child_process');
 
 var browserInstances = [];
-
+var lastInstance = '';
 function throwError(res, api, error){
     res.status(500).send(`[API: ${api}] - ${error}`);
 }
@@ -85,6 +85,7 @@ app.get('/start', function (req, res) {
             url: url,
             child: child
         };
+        lastInstance = url;
     }
     catch(e){
         //throwError(res, 'start', 'some error occurred');
@@ -102,19 +103,15 @@ app.get('/geturl', function (req, res) {
         return;
     }
 
-    var instances = browserInstances[browser] || null;
-    var countInstances = instances != null ? instances.length : 0;
-    if(countInstances > 0){
-        var lastIntance  = instances[countInstances-1];
-        console.log("lastIntance",lastIntance)
-        displayHTML(res, `Successfully opened ${lastIntance.pid} instances of ${browser}`);
+    //var instances = browserInstances[browser] || null;
+    if(lastInstance.length > 0){
+        displayHTML(res, `Successfully opened ${lastInstance} instances of ${browser}`);
     }
     
 });
 
 app.get('/stop', function (req, res) {
     let { browser } = req.query;
-    let { browser } = req.query;
 
     let isValidBrowser = (browser === 'chrome' || browser === 'firefox') ? true:false;
 
@@ -127,14 +124,20 @@ app.get('/stop', function (req, res) {
     var countInstances = instances != null ? instances.length : 0;
     if(countInstances > 0){
         console.log("countInstances",countInstances)
+        
+        for(var i in instances){
+            var {url, child} = instances[i];
+            child.kill(0);
+        }
     }
+
+    displayHTML(res, `Successfully stopped ${browser}`);
 });
 
 
 
 app.get('/cleanup', function (req, res) {
     let { browser } = req.query;
-    let { browser } = req.query;
 
     let isValidBrowser = (browser === 'chrome' || browser === 'firefox') ? true:false;
 
@@ -148,6 +151,17 @@ app.get('/cleanup', function (req, res) {
     if(countInstances > 0){
         console.log("countInstances",countInstances)
     }
+
+    exec(`taskkill /im ${browser} /t`, (err, stdout, stderr) => {
+        if (err) {
+          throw err
+        }
+    
+        console.log('stdout', stdout)
+        console.log('stderr', err)
+      });
+
+      displayHTML(res, `Successfully cleaned ${browser}`);
 });
 
 
