@@ -16,7 +16,7 @@ const OS_PLATFORM = require('os').platform();
 const REMOTE_DEBUGGING_PORT = 9523;
 const APP_CHROME_PATH = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
 const APP_FIREFOX_PATH = 'C:\\Program Files\\Mozilla Firefox\\firefox.exe';
-const APP_BROWSER_USER_DIR = 'C:\\Users\\intel\\Downloads\\Simlutedata';
+const APP_BROWSER_USER_DIR = 'C:\\Users\\<USER>\\Downloads\\BrowserInstanceTestingData';
 let APP_BROWSER_INSTANCE_COUNT = 1;
 
 var browserInstances = [];
@@ -97,12 +97,15 @@ function cleanupBrowserInstance(browser,callback){
 }
 
 app.get('/', function (req, res) {
+
     var tmp = "Method  |  Endpoint  |  Parameter(s)"+"<br>";
     tmp += "GET  |  /start  |  browser, url"+"<br>";
     tmp += "GET  |  /stop  |  browser"+"<br>";
     tmp += "GET  |  /cleanup  |  browser"+"<br>";
     tmp += "GET  |  /geturl  |  browser"+"<br>";
-    res.send('Sorry your have reached the wrong place!<br>APIs<br>'+tmp);
+
+    tmp += "<br><br><br>Please setup the following variables in APP:<br>const APP_CHROME_PATH = 'C:\\.....\chrome.exe';<br>const APP_FIREFOX_PATH = 'C:\\......\\firefox.exe';<br>const APP_BROWSER_USER_DIR = 'C:\\Users\\<USER>\\Downloads\\BrowserInstanceTestingData';";
+    res.send('Sorry your have reached the wrong place!<br><br><br>APIs<br>'+tmp);
 });
 
 app.get('/start', function (req, res) {
