@@ -1,0 +1,29 @@
+{
+  "name": "browser-automation-testing-tool",
+  "version": "1.0.0",
+  "description": "Browser Testing Tool",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/austinnoronha/browser-automation-testing-tool.git"
+  },
+  "keywords": [
+    "Automation",
+    "Testing"
+  ],
+  "author": "Austin Noronha",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/austinnoronha/browser-automation-testing-tool/issues"
+  },
+  "homepage": "https://github.com/austinnoronha/browser-automation-testing-tool#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
