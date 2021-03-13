@@ -16,7 +16,7 @@ const OS_PLATFORM = require('os').platform();
 const REMOTE_DEBUGGING_PORT = 9523;
 const APP_CHROME_PATH = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
 const APP_FIREFOX_PATH = 'C:\\Program Files\\Mozilla Firefox\\firefox.exe';
-const APP_BROWSER_USER_DIR = 'C:\\Users\\<USER>\\Downloads\\BrowserInstanceTestingData';
+const APP_BROWSER_USER_DIR = 'C:\\Users\\<___USER___>\\Downloads\\BrowserInstanceTestingData';
 let APP_BROWSER_INSTANCE_COUNT = 1;
 
 var browserInstances = [];
@@ -141,7 +141,7 @@ app.get('/start', function (req, res) {
             });
             lastInstance = url;
 
-            displayHTML(res, `Successfully loaded (${id}) ${browser} - url ${url} & pid: ${browserInstance.pid}`);
+            displayHTML(res, `Successfully loaded (No. ${id}) ${browser} - url ${url} & pid: ${browserInstance.pid}`);
         }
 
         startNewBrowserInstance(browser, url, APP_BROWSER_INSTANCE_COUNT++, callBack);
@@ -165,7 +165,7 @@ app.get('/geturl', function (req, res) {
 
     //var instances = browserInstances[browser] || null;
     if(lastInstance.length > 0){
-        displayHTML(res, `Successfully opened ${lastInstance} instances of ${browser}`);
+        displayHTML(res, `Successfully opened "${lastInstance}" instance of ${browser}`);
     }
     
 });
