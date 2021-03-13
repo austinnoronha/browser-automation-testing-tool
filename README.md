@@ -1,7 +1,10 @@
 ## Browser Automation Tool
 
-This NodeJS APP will trigger "X" no.of instances of a browser
-Works only with Chrom/Firefox on windows platform.
+Browser Automation Tool - My Demo APP
+
+This NodeJS APP will trigger "X" no.of instances of a browser and you can cleanup the instances and user directory created on the fly. Works only with Chrome/Firefox on windows platform. 
+
+(https://github.com/austinnoronha/browser-automation-testing-tool)[https://github.com/austinnoronha/browser-automation-testing-tool] 
 
 ### End Point APIs
 
